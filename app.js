@@ -20,7 +20,5 @@ SwaggerExpress.create(config, function(err, swaggerExpress) {
   var port = process.env.PORT || 40005;
   app.listen(port);
 
-  if (swaggerExpress.runner.swagger.paths['/hello']) {
-    console.log('try this:\ncurl http://127.0.0.1:' + port + '/hello?name=Scott');
-  }
+  console.log('sororoc server start!! port = ' + port);
 });

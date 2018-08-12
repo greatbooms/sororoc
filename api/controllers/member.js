@@ -11,6 +11,7 @@
   It is a good idea to list the modules that your application depends on in the package.json in the project root
  */
 var util = require('util');
+var pool = require('../../config/databaseConfig');
 
 /*
  Once you 'require' a module you can reference the things that it exports.  These are defined in module.exports.
@@ -38,6 +39,20 @@ function hello(req, res) {
   // variables defined in the Swagger document can be referenced using req.swagger.params.{parameter_name}
   var name = req.swagger.params.name.value || 'stranger';
   var hello = util.format('Hello, %s!', name);
+
+  var queryStr = 'SELECT * FROM sororoc.member';
+  pool.query(queryStr, function(error, rows, fields) {
+    console.log(rows)
+    if (error) {
+      console.log(error)
+    } else {
+      if (rows != undefined && rows.length != 0) {
+        console.log(rows)
+      } else {
+        console.log('aaaa')
+      }
+    }
+  })
 
   // this sends back a JSON response which is a single string
   res.json(hello);

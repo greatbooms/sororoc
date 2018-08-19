@@ -28,7 +28,8 @@ var reponseReturn = require('../helpers/reponseReturn');
  */
 module.exports = {
   login: login,
-  join: join
+  join: join,
+  update: update
 };
 
 /*
@@ -45,22 +46,24 @@ async function login(req, res) {
   let returnParam = {};
 
   try {
-    selectParam.type = req.swagger.params.login.value.type;
-    selectParam.uid = req.swagger.params.login.value.uid;
+    selectParam.type = req.swagger.params.data.value.type;
+    selectParam.uid = req.swagger.params.data.value.uid;
     let resultLoginInfo = await memberIo.retrieveSocialLogin(selectParam);
 
     console.log(resultLoginInfo);
 
-    if(resultLoginInfo != undefined && resultLoginInfo.length != 0) {
+    if (resultLoginInfo != undefined && resultLoginInfo.length != 0) {
       returnParam.memberId = resultLoginInfo[0].id;
       returnParam.email = resultLoginInfo[0].email;
       returnParam.phone = resultLoginInfo[0].phone;
       returnParam.name = resultLoginInfo[0].name;
+      returnParam.idxImage = resultLoginInfo[0].idxImage;
     } else {
       returnParam.memberId = -1;
       returnParam.email = '';
       returnParam.phone = '';
       returnParam.name = '';
+      returnParam.idxImage = '';
     }
 
     reponseReturn.success(res, returnParam);
@@ -72,8 +75,6 @@ async function login(req, res) {
 }
 
 async function join(req, res) {
-  console.log('*********************');
-  console.log(req.swagger.params);
   let insertParam = {};
   let returnParam = {};
   let file = req.swagger.params.memberImage.value;
@@ -117,8 +118,45 @@ async function join(req, res) {
     returnParam.email = req.swagger.params.email.value;
     returnParam.phone = req.swagger.params.phone.value;
     returnParam.name = req.swagger.params.name.value;
+    returnParam.idxImage = insertParam.idxImage;
 
     reponseReturn.success(res, returnParam);
+  } catch (err) {
+    console.log(err);
+    returnParam.message = err.message;
+    reponseReturn.error(res, returnParam, '500');
+  }
+}
+
+async function update(req, res) {
+  let returnParam = {};
+  try {
+    let updateParam = {};
+    let file = req.swagger.params.memberImage.value;
+    if (file != undefined) {
+      file.savename = memberIo.createNonceStr() + '_' + file.originalname;
+
+      memberIo.saveImage(file);
+
+      let resultImage = await memberIo.insertMemberImage(file);
+
+      console.log(resultImage)
+
+      updateParam.idxImage = resultImage.insertId;
+    }
+
+    updateParam.name = req.swagger.params.name.value;
+    updateParam.phone = req.swagger.params.phone.value;
+    updateParam.email = req.swagger.params.email.value;
+    updateParam.memberId = req.swagger.params.memberId.value;
+
+    console.log(updateParam);
+
+    let resultMember = await memberIo.updateMemberInfo(updateParam);
+
+    returnParam = await memberIo.retrieveMemberInfo(req.swagger.params.memberId.value);
+
+    reponseReturn.success(res, returnParam[0]);
   } catch (err) {
     console.log(err);
     returnParam.message = err.message;

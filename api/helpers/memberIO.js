@@ -29,6 +29,7 @@ exports.insertMemberImage = (param) => new Promise((resolve, reject) => {
   queryStr += 'insert_date) ';
   queryStr += 'VALUES (?, ?, ?, ?, ?, now())';
   var queryVar = [param.savename, param.originalname, param.mimetype, param.size, 1];
+  console.log(queryVar);
   pool.query(queryStr, queryVar, function(error, rows, fields) {
     if (error) {
       reject(error)
@@ -52,6 +53,7 @@ exports.insertMemberInfo = (param) => new Promise((resolve, reject) => {
   queryStr += 'insert_date) ';
   queryStr += 'VALUES (?, ?, ?, ?, ?, now())';
   var queryVar = [param.idxImage, param.name, param.phone, param.email, 1];
+  console.log(queryVar);
   pool.query(queryStr, queryVar, function(error, rows, fields) {
     if (error) {
       reject(error)
@@ -74,6 +76,7 @@ exports.insertLoginInfo = (param) => new Promise((resolve, reject) => {
   queryStr += 'insert_date) ';
   queryStr += 'VALUES (?, ?, ?, ?, now())';
   var queryVar = [param.idxMember, param.loginType, param.loginUid, 1];
+  console.log(queryVar);
   pool.query(queryStr, queryVar, function(error, rows, fields) {
     if (error) {
       reject(error)
@@ -88,7 +91,7 @@ exports.insertLoginInfo = (param) => new Promise((resolve, reject) => {
 })
 
 exports.retrieveSocialLogin = (param) => new Promise((resolve, reject) => {
-  var queryStr = 'SELECT b.id, b.name, b.phone, b.email '
+  var queryStr = 'SELECT b.id, b.name, b.phone, b.email, b.idx_image as idxImage '
   queryStr += 'FROM socialLogin a, member b ';
   queryStr += 'WHERE a.idx_member = b.id ';
   queryStr += 'AND b.status_flag != 3 ';
@@ -98,10 +101,52 @@ exports.retrieveSocialLogin = (param) => new Promise((resolve, reject) => {
   console.log(queryVar);
   pool.query(queryStr, queryVar, function(error, rows, fields) {
     if (error) {
-    	console.log(error);
+      console.log(error);
       reject(error)
     } else {
-    	resolve(rows);
+      resolve(rows);
+    }
+  })
+})
+
+exports.updateMemberInfo = (param) => new Promise((resolve, reject) => {
+  var queryStr = 'update member set ';
+  if (param.idxImage != undefined) {
+    queryStr += 'idx_image = ' + param.idxImage + ', ';
+  }
+  queryStr += 'name = \"' + param.name + '\", ';
+  queryStr += 'phone = \"' + param.phone + '\", ';
+  queryStr += 'email = \"' + param.email + '\", ';
+  queryStr += 'status_flag = 2, ';
+  queryStr += 'update_date = now() ';
+  queryStr += 'WHERE id = ' + param.memberId;
+  console.log(queryStr);
+  pool.query(queryStr, function(error, rows, fields) {
+    if (error) {
+      reject(error)
+    } else {
+      if (rows != undefined && rows.length != 0) {
+        resolve(rows);
+      } else {
+        reject(new Error('no insert member!!'));
+      }
+    }
+  })
+})
+
+exports.retrieveMemberInfo = (param) => new Promise((resolve, reject) => {
+  var queryStr = 'SELECT id, name, phone, email, idx_image as idxImage '
+  queryStr += 'FROM member ';
+  queryStr += 'WHERE id = ? ';
+  queryStr += 'AND status_flag != 3 ';
+  var queryVar = [param];
+  console.log(queryVar);
+  pool.query(queryStr, queryVar, function(error, rows, fields) {
+    if (error) {
+      console.log(error);
+      reject(error)
+    } else {
+      resolve(rows);
     }
   })
 })

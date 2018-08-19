@@ -31,7 +31,10 @@ module.exports = {
   createRepository: createRepository,
   retrieveRepositoryList: retrieveRepositoryList,
   retrieveRepositoryDetail: retrieveRepositoryDetail,
-  retrieveRepositoryName: retrieveRepositoryName
+  retrieveRepositoryName: retrieveRepositoryName,
+  joinRepository: joinRepository,
+  exitRepository: exitRepository,
+  destroyRepository: destroyRepository
 };
 
 /*
@@ -42,16 +45,16 @@ module.exports = {
  */
 
 async function createRepositoryCode(req, res) {
+  let returnParam = {};
   try {
     let exitFlag = true;
-    let returnParam = {};
     let code = '';
     do {
       code = Math.floor((1 + Math.random()) * 0x100000).toString(16).toUpperCase();
 
       let resultCode = await repositoryIO.retrieveRepositoryCode(code);
 
-      if(resultCode.length != 0) {
+      if (resultCode.length != 0) {
         continue;
       } else {
         exitFlag = false;
@@ -118,9 +121,10 @@ async function createRepository(req, res) {
 }
 
 async function retrieveRepositoryList(req, res) {
+  let returnParam = {};
   try {
-    let returnParam = {};
     let memberId = req.swagger.params.memberId.value;
+    console.log(req.swagger.params)
 
     let resultRepositoryList = await repositoryIO.retrieveRepositoryList(memberId);
 
@@ -136,8 +140,8 @@ async function retrieveRepositoryList(req, res) {
 }
 
 async function retrieveRepositoryDetail(req, res) {
+  let returnParam = {};
   try {
-    let returnParam = {};
     let repositoryId = req.swagger.params.repositoryId.value;
 
     let resultRepositoryMemberList = await repositoryIO.retrieveRepositoryDetail(repositoryId);
@@ -154,10 +158,10 @@ async function retrieveRepositoryDetail(req, res) {
 }
 
 async function retrieveRepositoryName(req, res) {
+  let returnParam = {};
   try {
-    let returnParam = {};
     let selectParam = {};
-    
+
     selectParam.repositoryName = req.swagger.params.name.value;
     selectParam.memberId = req.swagger.params.memberId.value;
 
@@ -175,19 +179,119 @@ async function retrieveRepositoryName(req, res) {
 }
 
 async function joinRepository(req, res) {
+  let returnParam = {};
   try {
-    let returnParam = {};
     let insertParam = {};
 
-    insertParam.memberId = req.swagger.params.memberId.value;
-    insertParam.repositoryId = req.swagger.params.repositoryId.value;
-    insertParam.code = req.swagger.params.code.value;
+    insertParam.idxMember = req.swagger.params.data.value.memberId;
+    insertParam.idxRepository = req.swagger.params.data.value.repositoryId;
+    insertParam.code = req.swagger.params.data.value.code;
 
-    let resultInsert = await repositoryIO.insertRepositoryJoin(insertParam);
+    let resultRetrieve = await repositoryIO.retrieveRepositoryCodeCheck(insertParam);
 
-    console.log(resultInsert);
+    console.log(resultRetrieve);
 
-    reponseReturn.success(res, resultInsert);
+    if (resultRetrieve.length != 0) {
+      let joinCheck = await repositoryIO.retrieveRepositoryJoinCheck(insertParam);
+      console.log(joinCheck);
+      if (joinCheck.length == 0) {
+        let resultInsert = await repositoryIO.insertRepositoryJoin(insertParam);
+        returnParam.repositoryId = req.swagger.params.data.value.repositoryId;
+      } else {
+        returnParam.repositoryId = -2;
+        returnParam.message = '이미 가입된 저장소 입니다.';
+      }
+    } else {
+      returnParam.repositoryId = -1;
+      returnParam.message = '코드가 일치하지 않습니다.';
+    }
+
+    reponseReturn.success(res, returnParam);
+
+  } catch (err) {
+    console.log(err);
+    returnParam.message = err.message;
+    reponseReturn.error(res, returnParam, '500');
+  }
+}
+
+async function retrieveRepositoryName(req, res) {
+  let returnParam = {};
+  try {
+    let selectParam = {};
+
+    selectParam.repositoryName = req.swagger.params.name.value;
+    selectParam.memberId = req.swagger.params.memberId.value;
+
+    let resultRepositorySearchList = await repositoryIO.retrieveRepositoryName(selectParam);
+
+    console.log(resultRepositorySearchList);
+
+    reponseReturn.success(res, resultRepositorySearchList);
+
+  } catch (err) {
+    console.log(err);
+    returnParam.message = err.message;
+    reponseReturn.error(res, returnParam, '500');
+  }
+}
+
+async function exitRepository(req, res) {
+  let returnParam = {};
+  try {
+    let updateParam = {};
+
+    updateParam.idxRepository = req.swagger.params.data.value.repositoryId;
+    updateParam.idxMember = req.swagger.params.data.value.memberId;
+
+    let result = await repositoryIO.exitRepository(updateParam);
+
+    console.log(result);
+
+    if (result.changedRows == 0) {
+      returnParam.code = -1;
+      returnParam.message = '그룹 나가기에 실패하였습니다.'
+    } else {
+      returnParam.code = 0;
+      returnParam.message = ''
+    }
+
+    reponseReturn.success(res, returnParam);
+
+  } catch (err) {
+    console.log(err);
+    returnParam.message = err.message;
+    reponseReturn.error(res, returnParam, '500');
+  }
+}
+
+async function destroyRepository(req, res) {
+  let returnParam = {};
+  try {
+    let updateParam = {};
+
+    updateParam.idxRepository = req.swagger.params.data.value.repositoryId;
+    updateParam.idxMember = req.swagger.params.data.value.memberId;
+
+    let resultAuthority = await repositoryIO.retrieveAuthority(updateParam);
+
+    console.log(resultAuthority);
+
+    if (resultAuthority.length > 0 && resultAuthority[0].authority == 1) {
+      let result = await repositoryIO.destroyRepository(updateParam);
+      if (result.changedRows == 0) {
+        returnParam.code = -2;
+        returnParam.message = '그룹 폭파에 실패하였습니다.'
+      } else {
+        returnParam.code = 0;
+        returnParam.message = ''
+      }
+    } else {
+      returnParam.code = -1;
+      returnParam.message = '그룹 폭파 권한이 없습니다.'
+    }
+
+    reponseReturn.success(res, returnParam);
 
   } catch (err) {
     console.log(err);

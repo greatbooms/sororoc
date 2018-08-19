@@ -33,6 +33,8 @@ paths:
             properties:
               eamil: {description: "\uD68C\uC6D0\uAC00\uC785\uB418\uC788\uC9C0 \uC54A\
                   \uC744\uB54C\uB294 ''", type: string}
+              idxImage: {description: "\uBA64\uBC84 \uD504\uB85C\uD544 \uC774\uBBF8\
+                  \uC9C0", type: integer}
               memberId: {type: integer}
               name: {description: "\uD68C\uC6D0\uAC00\uC785\uB418\uC788\uC9C0 \uC54A\
                   \uC744\uB54C\uB294 ''", type: string}
@@ -52,7 +54,7 @@ paths:
       - description: "\uC774\uBBF8 \uAC00\uC785\uB41C \uD68C\uC6D0\uC778\uC9C0 \uD655\
           \uC778"
         in: body
-        name: login
+        name: data
         schema:
           properties:
             type: {description: 0 - google 1 - kakao 2 - naver, type: string}
@@ -66,6 +68,8 @@ paths:
             properties:
               eamil: {description: "\uD68C\uC6D0\uAC00\uC785\uB418\uC788\uC9C0 \uC54A\
                   \uC744\uB54C\uB294 ''", type: string}
+              idxImage: {description: "\uBA64\uBC84 \uD504\uB85C\uD544 \uC774\uBBF8\
+                  \uC9C0", type: integer}
               memberId: {description: "\uD68C\uC6D0\uAC00\uC785\uB418\uC788\uC9C0\
                   \ \uC54A\uC744\uB54C\uB294 -1 \uC74C\uC218\uAC12\uC73C\uB85C \uBCF4\
                   \uB0C4", type: integer}
@@ -78,6 +82,54 @@ paths:
           description: Error
           schema: {$ref: '#/definitions/ErrorResponse'}
     x-swagger-router-controller: member
+  /member/update:
+    put:
+      consumes: [multipart/form-data]
+      description: "\uBA64\uBC84\uC815\uBCF4 \uC5C5\uB370\uC774\uD2B8"
+      operationId: update
+      parameters:
+      - {description: phone, in: formData, name: phone, required: true, type: string}
+      - {description: name, in: formData, name: name, required: true, type: string}
+      - {description: email, in: formData, name: email, required: true, type: string}
+      - {description: "\uC218\uC815\uD558\uB824\uB294 \uBA64\uBC84 \uC544\uC774\uB514",
+        in: formData, name: memberId, required: true, type: integer}
+      - {description: profile Image, in: formData, name: memberImage, required: false,
+        type: file}
+      responses:
+        '200':
+          description: Success
+          schema:
+            properties:
+              eamil: {description: "\uD68C\uC6D0\uAC00\uC785\uB418\uC788\uC9C0 \uC54A\
+                  \uC744\uB54C\uB294 ''", type: string}
+              idxImage: {description: "\uBA64\uBC84 \uD504\uB85C\uD544 \uC774\uBBF8\
+                  \uC9C0", type: integer}
+              memberId: {type: integer}
+              name: {description: "\uD68C\uC6D0\uAC00\uC785\uB418\uC788\uC9C0 \uC54A\
+                  \uC744\uB54C\uB294 ''", type: string}
+              phone: {description: "\uD68C\uC6D0\uAC00\uC785\uB418\uC788\uC9C0 \uC54A\
+                  \uC744\uB54C\uB294 ''", type: string}
+            required: [memberId]
+        default:
+          description: Error
+          schema: {$ref: '#/definitions/ErrorResponse'}
+    x-swagger-router-controller: member
+  /repository/code:
+    get:
+      description: "\uC800\uC7A5\uC18C \uCF54\uB4DC \uC0DD\uC131"
+      operationId: createRepositoryCode
+      produces: [application/json, application/xml]
+      responses:
+        '200':
+          description: Success
+          schema:
+            properties:
+              code: {description: "\uC800\uC7A5\uC18C \uCF54\uB4DC", type: string}
+            required: [code]
+        default:
+          description: Error
+          schema: {$ref: '#/definitions/ErrorResponse'}
+    x-swagger-router-controller: repository
   /repository/create:
     put:
       consumes: [multipart/form-data]
@@ -99,27 +151,122 @@ paths:
           description: Success
           schema:
             properties:
-              repositoryId: {type: integer}
+              code: {type: string}
               memberId: {type: integer}
               name: {type: string}
-              code: {type: string}
+              repositoryId: {type: integer}
             required: [repositoryId]
         default:
           description: Error
           schema: {$ref: '#/definitions/ErrorResponse'}
     x-swagger-router-controller: repository
-  /repository/code:
+  /repository/destroy:
+    post:
+      consumes: [application/json]
+      description: "그룹 폭파"
+      operationId: destroyRepository
+      parameters:
+      - description: ''
+        in: body
+        name: data
+        schema:
+          properties:
+            memberId: {type: integer}
+            repositoryId: {type: integer}
+          required: [memberId, repositoryId]
+          type: object
+      responses:
+        '200':
+          description: Success
+          schema:
+            properties:
+              code: {description: "\uC2E4\uD328\uC2DC \uC74C\uC218 \uC131\uACF5\uC2DC\
+                  \ 0", type: integer}
+              message: {type: string}
+            required: [code]
+        default:
+          description: Error
+          schema: {$ref: '#/definitions/ErrorResponse'}
+    x-swagger-router-controller: repository
+  /repository/detail:
     get:
-      description: "저장소 코드 생성"
-      operationId: createRepositoryCode
+      description: "\uC800\uC7A5\uC18C \uB0B4 \uBA64\uBC84 \uB9AC\uC2A4\uD2B8"
+      operationId: retrieveRepositoryDetail
+      parameters:
+      - {in: query, name: repositoryId, required: true, type: integer}
       produces: [application/json, application/xml]
       responses:
         '200':
           description: Success
           schema:
             properties:
-              code: {description: "저장소 코드", type: string}
+              authority: {description: "\uC800\uC7A5\uC18C \uB0B4 \uBA64\uBC84 \uAD8C\
+                  \uD55C", type: integer}
+              email: {description: "\uBA64\uBC84 \uC774\uBA54\uC77C", type: string}
+              memberId: {description: "\uBA64\uBC84 \uC778\uB371\uC2A4", type: integer}
+              name: {description: "\uBA64\uBC84 \uC774\uB984", type: string}
+              phone: {description: "\uBA64\uBC84 \uC804\uD654\uBC88\uD638", type: string}
+            required: [memberId]
+        default:
+          description: Error
+          schema: {$ref: '#/definitions/ErrorResponse'}
+    x-swagger-router-controller: repository
+  /repository/exit:
+    post:
+      consumes: [application/json]
+      description: "\uADF8\uB8F9 \uB098\uAC00\uAE30"
+      operationId: exitRepository
+      parameters:
+      - description: ''
+        in: body
+        name: data
+        schema:
+          properties:
+            memberId: {type: integer}
+            repositoryId: {type: integer}
+          required: [memberId, repositoryId]
+          type: object
+      responses:
+        '200':
+          description: Success
+          schema:
+            properties:
+              code: {description: "\uC2E4\uD328\uC2DC \uC74C\uC218 \uC131\uACF5\uC2DC\
+                  \ 0", type: integer}
+              message: {type: string}
             required: [code]
+        default:
+          description: Error
+          schema: {$ref: '#/definitions/ErrorResponse'}
+    x-swagger-router-controller: repository
+  /repository/join:
+    put:
+      consumes: [application/json]
+      description: "\uC800\uC7A5\uC18C \uAC00\uC785"
+      operationId: joinRepository
+      parameters:
+      - description: "\uBA64\uBC84\uAC00 \uC800\uC7A5\uC18C \uAC00\uC785\uD560 \uB54C"
+        in: body
+        name: data
+        schema:
+          properties:
+            code: {type: string}
+            memberId: {type: integer}
+            repositoryId: {type: integer}
+          required: [memberId, repositoryId, code]
+          type: object
+      responses:
+        '200':
+          description: Success
+          schema:
+            properties:
+              message: {description: "\uC2E4\uD328\uC2DC \uBA54\uC138\uC9C0 -1\uC77C\
+                  \ \uACBD\uC6B0 \uCF54\uB4DC \uBD88\uC77C\uCE58, -2\uC77C \uACBD\uC6B0\
+                  \ \uC774\uBBF8\uAC00\uC785\uB41C \uC800\uC7A5\uC18C", type: string}
+              repositoryId: {description: "\uC131\uACF5\uC2DC \uAC00\uC785\uB41C \uC800\
+                  \uC7A5\uC18C \uC544\uC774\uB514 \uB9AC\uD134 \uC2E4\uD328\uC2DC\
+                  \ \uC74C\uC218 \uB9AC\uD134", type: integer}
+            required: [repositoryId]
         default:
           description: Error
           schema: {$ref: '#/definitions/ErrorResponse'}
@@ -136,40 +283,19 @@ paths:
           description: Success
           schema:
             properties:
-              repositoryId: {description: "저장소 인덱스", type: integer}
-              name: {description: "저장소 이름", type: string}
-              extra_info: {description: "저장소 설명", type: string}
-              idx_image: {description: "저장소 이미지", type: string}
+              extra_info: {description: "\uC800\uC7A5\uC18C \uC124\uBA85", type: string}
+              idxImage: {description: "\uC800\uC7A5\uC18C \uC774\uBBF8\uC9C0", type: string}
+              name: {description: "\uC800\uC7A5\uC18C \uC774\uB984", type: string}
+              repositoryId: {description: "\uC800\uC7A5\uC18C \uC778\uB371\uC2A4",
+                type: integer}
             required: [repositoryId]
-        default:
-          description: Error
-          schema: {$ref: '#/definitions/ErrorResponse'}
-    x-swagger-router-controller: repository
-  /repository/detail:
-    get:
-      description: "저장소 내 멤버 리스트"
-      operationId: retrieveRepositoryDetail
-      parameters:
-      - {in: query, name: repositoryId, required: true, type: integer}
-      produces: [application/json, application/xml]
-      responses:
-        '200':
-          description: Success
-          schema:
-            properties:
-              memberId: {description: "멤버 인덱스", type: integer}
-              name: {description: "멤버 이름", type: string}
-              phone: {description: "멤버 전화번호", type: string}
-              email: {description: "멤버 이메일", type: string}
-              authority: {description: "저장소 내 멤버 권한", type: integer}
-            required: [memberId]
         default:
           description: Error
           schema: {$ref: '#/definitions/ErrorResponse'}
     x-swagger-router-controller: repository
   /repository/search:
     get:
-      description: "저장소 이름으로 검색"
+      description: "\uC800\uC7A5\uC18C \uC774\uB984\uC73C\uB85C \uAC80\uC0C9"
       operationId: retrieveRepositoryName
       parameters:
       - {in: query, name: name, required: true, type: string}
@@ -180,43 +306,16 @@ paths:
           description: Success
           schema:
             properties:
-              repositoryId: {description: "저장소 인덱스", type: integer}
-              idx_image: {description: "저장소 이미지", type: integer}
-              name: {description: "저장소 이름", type: string}
-              extra_info: {description: "저장소 설명", type: string}
+              extra_info: {description: "\uC800\uC7A5\uC18C \uC124\uBA85", type: string}
+              idxImage: {description: "\uC800\uC7A5\uC18C \uC774\uBBF8\uC9C0", type: integer}
+              name: {description: "\uC800\uC7A5\uC18C \uC774\uB984", type: string}
+              repositoryId: {description: "\uC800\uC7A5\uC18C \uC778\uB371\uC2A4",
+                type: integer}
             required: [repositoryId]
         default:
           description: Error
           schema: {$ref: '#/definitions/ErrorResponse'}
     x-swagger-router-controller: repository
-  /repository/join:
-    put:
-      consumes: [application/json]
-      description: "저장소 가입"
-      operationId: joinRepository
-      parameters:
-      - description: "멤버가 저장소 가입할 때"
-        in: body
-        name: data
-        schema:
-          properties:
-            memberId: {type: integer}
-            repositoryId: {type: integer}
-            code: {type: string}
-          required: [memberId, repositoryId, code]
-          type: object
-      responses:
-        '200':
-          description: Success
-          schema:
-            properties:
-              eamil: {description: "\uD68C\uC6D0\uAC00\uC785\uB418\uC788\uC9C0 \uC54A\
-                  \uC744\uB54C\uB294 ''", type: string}
-            required: [eamil]
-        default:
-          description: Error
-          schema: {$ref: '#/definitions/ErrorResponse'}
-    x-swagger-router-controller: member
   /swagger: {x-swagger-pipe: swagger_raw}
 produces: [application/json]
 schemes: [http]

@@ -8,8 +8,6 @@ var config = {
   connectionLimit: 30
 };
 
-console.log(config)
-
 var pool = mysql.createPool(config);
 
 module.exports = pool;

@@ -2,6 +2,7 @@
 
 var SwaggerExpress = require('swagger-express-mw');
 var app = require('express')();
+var bodyParser = require('body-parser');
 module.exports = app; // for testing
 
 var config = {
@@ -11,7 +12,6 @@ var SwaggerUi = require('swagger-tools/middleware/swagger-ui');
 
 SwaggerExpress.create(config, function(err, swaggerExpress) {
   if (err) { throw err; }
-
   // install middleware
   swaggerExpress.register(app);
 

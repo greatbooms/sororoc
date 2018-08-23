@@ -34,7 +34,9 @@ module.exports = {
   retrieveRepositoryName: retrieveRepositoryName,
   joinRepository: joinRepository,
   exitRepository: exitRepository,
-  destroyRepository: destroyRepository
+  destroyRepository: destroyRepository,
+  retrieveRepositoryMember: retrieveRepositoryMember,
+  changeAuthority: changeAuthority
 };
 
 /*
@@ -278,7 +280,8 @@ async function destroyRepository(req, res) {
     console.log(resultAuthority);
 
     if (resultAuthority.length > 0 && resultAuthority[0].authority == 1) {
-      let result = await repositoryIO.destroyRepository(updateParam);
+      let result = await repositoryIO.removeRepositoryMember(updateParam);
+      let result2 = await repositoryIO.removeRepository(updateParam);
       if (result.changedRows == 0) {
         returnParam.code = -2;
         returnParam.message = '그룹 폭파에 실패하였습니다.'
@@ -299,3 +302,96 @@ async function destroyRepository(req, res) {
     reponseReturn.error(res, returnParam, '500');
   }
 }
+
+async function retrieveRepositoryMember(req, res) {
+  let returnParam = {};
+  try {
+    let selectParam = {};
+
+    selectParam.idxRepository = req.swagger.params.repositoryId.value;
+    selectParam.memberName = req.swagger.params.memberName.value;
+
+    let resultMember = await repositoryIO.retrieveRepositoryMember(selectParam);
+
+    console.log(resultMember);
+
+    reponseReturn.success(res, resultMember);
+
+  } catch (err) {
+    console.log(err);
+    returnParam.message = err.message;
+    reponseReturn.error(res, returnParam, '500');
+  }
+}
+
+async function changeAuthority(req, res) {
+  let returnParam = {};
+  try {
+    let updateParam = {};
+
+    updateParam.idxMember = req.swagger.params.data.value.fromMemberId;
+    updateParam.toMemberId = req.swagger.params.data.value.toMemberId;
+    updateParam.idxRepository = req.swagger.params.data.value.repositoryId;
+
+    let resultAuthority = await repositoryIO.retrieveAuthority(updateParam);
+
+    if (resultAuthority.length > 0 && resultAuthority[0].authority == 1) {
+      let resultUpdateAuthority1 = await repositoryIO.updateAuthority1(updateParam);
+      let resultUpdateAuthority2 = await repositoryIO.updateAuthority2(updateParam);
+
+      console.log(resultUpdateAuthority1);
+      console.log(resultUpdateAuthority2);
+
+      if (resultUpdateAuthority1.changedRows == 0 && resultUpdateAuthority2.changedRows == 0) {
+        returnParam.code = -1;
+        returnParam.message = '권한 변경에 실패하였습니다.'
+      } else {
+        returnParam.code = 0;
+        returnParam.message = ''
+      }
+    } else {
+      returnParam.code = -2;
+      returnParam.message = '권한 변경 권한이 없습니다.'
+    }
+
+    reponseReturn.success(res, returnParam);
+  } catch (err) {
+    console.log(err);
+    returnParam.message = err.message;
+    reponseReturn.error(res, returnParam, '500');
+  }
+}
+
+// async function update(req, res) {
+//   let returnParam = {};
+//   try {
+//     let updateParam = {};
+
+//     updateParam.code = req.swagger.params.data.value.code;
+//     updateParam.idxRepository = req.swagger.params.data.value.repositoryId;
+
+//     let exitFlag = true;
+//     let code = '';
+//     do {
+//       code = Math.floor((1 + Math.random()) * 0x100000).toString(16).toUpperCase();
+
+//       let resultCode = await repositoryIO.retrieveRepositoryCode(code);
+
+//       if (resultCode.length != 0) {
+//         continue;
+//       } else {
+//         exitFlag = false;
+//       }
+
+//       returnParam.code = code;
+
+//       reponseReturn.success(res, returnParam);
+//     } while (exitFlag)
+
+//     reponseReturn.success(res, returnParam);
+//   } catch (err) {
+//     console.log(err);
+//     returnParam.message = err.message;
+//     reponseReturn.error(res, returnParam, '500');
+//   }
+// }

@@ -13,6 +13,7 @@
 var util = require('util');
 var memberIo = require('../helpers/memberIO');
 var reponseReturn = require('../helpers/reponseReturn');
+var url = require('url');
 
 /*
  Once you 'require' a module you can reference the things that it exports.  These are defined in module.exports.
@@ -57,13 +58,13 @@ async function login(req, res) {
       returnParam.email = resultLoginInfo[0].email;
       returnParam.phone = resultLoginInfo[0].phone;
       returnParam.name = resultLoginInfo[0].name;
-      returnParam.idxImage = resultLoginInfo[0].idxImage;
+      returnParam.imageName = resultLoginInfo[0].imageName;
     } else {
       returnParam.memberId = -1;
       returnParam.email = '';
       returnParam.phone = '';
       returnParam.name = '';
-      returnParam.idxImage = '';
+      returnParam.imageName = '';
     }
 
     reponseReturn.success(res, returnParam);
@@ -80,23 +81,29 @@ async function join(req, res) {
   let file = req.swagger.params.memberImage.value;
 
   try {
+    let saveFileName = null;
     if (file != undefined) {
-      file.savename = memberIo.createNonceStr() + '_' + file.originalname;
+      console.log(file);
+      saveFileName = memberIo.createNonceStr() + '_' + file.originalname
+      file.savename = saveFileName;
 
       memberIo.saveImage(file);
 
       let resultImage = await memberIo.insertMemberImage(file);
 
-      console.log(resultImage)
-
       insertParam.idxImage = resultImage.insertId;
     } else if (req.swagger.params.imageUrl.value != undefined) {
-      let imageUrlParam = {};
-      imageUrlParam.savename = req.swagger.params.imageUrl.value;
-      imageUrlParam.originalname = req.swagger.params.imageUrl.value;
-      imageUrlParam.mimetype = 'URL';
-      imageUrlParam.size = 0;
-      let resultImage = await memberIo.insertMemberImage(imageUrlParam);
+      let inputUrl = req.swagger.params.imageUrl.value;
+      let parsedObject = url.parse(inputUrl);
+      saveFileName = memberIo.createNonceStr() + '_' + parsedObject.pathname.split('/')[parsedObject.pathname.split('/').length-1];
+      let saveImgParam = {};
+      saveImgParam.url = inputUrl;
+      saveImgParam.savename = saveFileName;
+      let resultSaveImage = await memberIo.saveUrlImage(saveImgParam);
+      saveImgParam.originalname = parsedObject.pathname.split('/')[parsedObject.pathname.split('/').length-1]
+      saveImgParam.mimetype = resultSaveImage.type;
+      saveImgParam.size = resultSaveImage.size;
+      let resultImage = await memberIo.insertMemberImage(saveImgParam);
 
       insertParam.idxImage = resultImage.insertId;
     }
@@ -118,7 +125,7 @@ async function join(req, res) {
     returnParam.email = req.swagger.params.email.value;
     returnParam.phone = req.swagger.params.phone.value;
     returnParam.name = req.swagger.params.name.value;
-    returnParam.idxImage = insertParam.idxImage;
+    returnParam.imageName = saveFileName;
 
     reponseReturn.success(res, returnParam);
   } catch (err) {
@@ -139,8 +146,6 @@ async function update(req, res) {
       memberIo.saveImage(file);
 
       let resultImage = await memberIo.insertMemberImage(file);
-
-      console.log(resultImage)
 
       updateParam.idxImage = resultImage.insertId;
     }

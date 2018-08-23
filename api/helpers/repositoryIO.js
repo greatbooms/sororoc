@@ -112,10 +112,12 @@ exports.retrieveRepositoryCode = (code) => new Promise((resolve, reject) => {
 })
 
 exports.retrieveRepositoryList = (code) => new Promise((resolve, reject) => {
-  var queryStr = 'SELECT b.id as repositoryId, b.name, b. extra_info, b.idx_image as idxImage, a.authority '
-  queryStr += 'FROM memberJoinRepository a, repository b ';
-  queryStr += 'WHERE a.idx_repository = b.id ';
-  queryStr += 'AND a.status_flag != 3 ';
+  var queryStr = 'SELECT b.id as repositoryId, b.name, b. extra_info, c.save_file_name AS imageName, a.authority '
+  queryStr += 'FROM memberJoinRepository a join repository b ';
+  queryStr += 'on a.idx_repository = b.id ';
+  queryStr += 'left join image_file c ';
+  queryStr += 'on b.idx_image = c.id ';
+  queryStr += 'WHERE a.status_flag != 3 ';
   queryStr += 'AND b.status_flag != 3 ';
   queryStr += 'AND a.idx_member = ? ';
   var queryVar = [code];
@@ -131,10 +133,10 @@ exports.retrieveRepositoryList = (code) => new Promise((resolve, reject) => {
 })
 
 exports.retrieveRepositoryDetail = (repositoryId) => new Promise((resolve, reject) => {
-  var queryStr = 'SELECT b.id as memberId, b.idx_image as idxImage, b.name, b.phone, b.email, a.authority '
-  queryStr += 'FROM memberJoinRepository a, member b ';
-  queryStr += 'WHERE a.idx_member = b.id ';
-  queryStr += 'AND a.status_flag != 3 ';
+  var queryStr = 'SELECT b.id as memberId, c.save_file_name AS imageName, b.name, b.phone, b.email, a.authority '
+  queryStr += 'FROM memberJoinRepository a join member b on a.idx_member = b.id ';
+  queryStr += 'LEFT JOIN image_file c ON b.idx_image = c.id '
+  queryStr += 'WHERE a.status_flag != 3 ';
   queryStr += 'AND b.status_flag != 3 ';
   queryStr += 'AND a.idx_repository = ? ';
   var queryVar = [repositoryId];
@@ -150,10 +152,15 @@ exports.retrieveRepositoryDetail = (repositoryId) => new Promise((resolve, rejec
 })
 
 exports.retrieveRepositoryName = (param) => new Promise((resolve, reject) => {
-  var queryStr = 'SELECT b.id as repositoryId, b.idx_image as idxImage, b.name, b.extra_info, IF(a.idx_member=?, true, false) as joinFlag '
-  queryStr += 'FROM memberJoinRepository a left join repository b on a.idx_repository = b.id ';
-  queryStr += "WHERE b.name like CONCAT('%', ?, '%') ";
-  queryStr += 'AND b.status_flag != 3 ';
+  var queryStr = 'SELECT '
+  queryStr += 'a.id AS repositoryId, ';
+  queryStr += 'c.save_file_name AS imageName, ';
+  queryStr += 'a.name, ';
+  queryStr += 'a.extra_info, ';
+  queryStr += 'IF((select authority from memberJoinRepository where idx_repository = a.id and idx_member = ?)  = 1, TRUE, FALSE) AS joinFlag ';
+  queryStr += 'FROM repository a LEFT JOIN image_file c ON a.idx_image = c.id ';
+  queryStr += "WHERE a.name LIKE CONCAT('%', ?, '%') ";
+  queryStr += 'AND a.status_flag != 3 ';
   var queryVar = [param.memberId, param.repositoryName];
   console.log(queryStr);
   console.log(queryVar);
@@ -268,7 +275,7 @@ exports.retrieveAuthority = (param) => new Promise((resolve, reject) => {
   })
 })
 
-exports.destroyRepository = (param) => new Promise((resolve, reject) => {
+exports.removeRepositoryMember = (param) => new Promise((resolve, reject) => {
   var queryStr = 'update memberJoinRepository set ';
   queryStr += 'status_flag = 3, ';
   queryStr += 'update_date = now() ';
@@ -285,6 +292,96 @@ exports.destroyRepository = (param) => new Promise((resolve, reject) => {
         resolve(rows);
       } else {
         reject(new Error('destroyRepository'));
+      }
+    }
+  })
+})
+
+exports.removeRepository = (param) => new Promise((resolve, reject) => {
+  var queryStr = 'update repository set ';
+  queryStr += 'status_flag = 3, ';
+  queryStr += 'update_date = now() ';
+  queryStr += 'WHERE idx_repository = ? ';
+  queryStr += 'AND status_flag != 3';
+  var queryVar = [param.idxRepository];
+  console.log(queryStr);
+  console.log(queryVar);
+  pool.query(queryStr, queryVar, function(error, rows, fields) {
+    if (error) {
+      reject(error)
+    } else {
+      if (rows != undefined && rows.length != 0) {
+        resolve(rows);
+      } else {
+        reject(new Error('destroyRepository'));
+      }
+    }
+  })
+})
+
+exports.retrieveRepositoryMember = (param) => new Promise((resolve, reject) => {
+  var queryStr = 'SELECT b.id as memberId, c.save_file_name AS imageName, b.name, b.phone, b.email, a.authority '
+  queryStr += 'FROM memberJoinRepository a join member b on a.idx_member = b.id ';
+  queryStr += 'LEFT JOIN image_file c ON b.idx_image = c.id '
+  queryStr += 'WHERE a.status_flag != 3 ';
+  queryStr += 'AND b.status_flag != 3 ';
+  queryStr += 'AND a.idx_repository = ? ';
+  queryStr += "AND b.name LIKE CONCAT('%', ?, '%') ";
+  var queryVar = [param.idxRepository, param.memberName];
+  console.log(queryStr);
+  console.log(queryVar);
+  pool.query(queryStr, queryVar, function(error, rows, fields) {
+    if (error) {
+      reject(error)
+    } else {
+      resolve(rows);
+    }
+  })
+})
+
+exports.updateAuthority1 = (param) => new Promise((resolve, reject) => {
+  var queryStr = 'update memberJoinRepository set ';
+  queryStr += 'authority = 1, ';
+  queryStr += 'status_flag = 2, ';
+  queryStr += 'update_date = now() ';
+  queryStr += 'WHERE idx_repository = ? ';
+  queryStr += 'AND idx_member = ? ';
+  queryStr += 'AND status_flag != 3';
+  var queryVar = [param.idxRepository, param.toMemberId];
+  console.log(queryStr);
+  console.log(queryVar);
+  pool.query(queryStr, queryVar, function(error, rows, fields) {
+    if (error) {
+      reject(error)
+    } else {
+      if (rows != undefined && rows.length != 0) {
+        resolve(rows);
+      } else {
+        reject(new Error('updateAuthority1'));
+      }
+    }
+  })
+})
+
+exports.updateAuthority2 = (param) => new Promise((resolve, reject) => {
+  var queryStr = 'update memberJoinRepository set ';
+  queryStr += 'authority = 0, ';
+  queryStr += 'status_flag = 2, ';
+  queryStr += 'update_date = now() ';
+  queryStr += 'WHERE idx_repository = ? ';
+  queryStr += 'AND idx_member = ? ';
+  queryStr += 'AND status_flag != 3';
+  var queryVar = [param.idxRepository, param.idxMember];
+  console.log(queryStr);
+  console.log(queryVar);
+  pool.query(queryStr, queryVar, function(error, rows, fields) {
+    if (error) {
+      reject(error)
+    } else {
+      if (rows != undefined && rows.length != 0) {
+        resolve(rows);
+      } else {
+        reject(new Error('updateAuthority2'));
       }
     }
   })

@@ -1,7 +1,8 @@
 var fs = require('fs');
+var request = require('request');
 var pool = require('../../config/databaseConfig');
 
-var ImagePath = './uploads/';
+var ImagePath = '/uploads/';
 
 var createNonceStr = exports.createNonceStr = function() {
   return Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1) + Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1) + Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1) + Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1) + Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1) + Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1) + Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1) + Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1);
@@ -10,7 +11,7 @@ var createNonceStr = exports.createNonceStr = function() {
 exports.saveImage = (file) => {
   fs.writeFile(ImagePath + file.savename, file.buffer, function(err) {
     if (err) {
-      debug(err);
+      console.log(err);
       var err = {
         message: 'File not uploaded'
       };
@@ -18,6 +19,18 @@ exports.saveImage = (file) => {
     }
   });
 }
+
+exports.saveUrlImage = (param) => new Promise((resolve, reject) => {
+  let returnParam = {};
+  request.head(param.url, function(err, res, body){
+    returnParam.type = res.headers['content-type'];
+    returnParam.size = res.headers['content-length'];
+
+    request(param.url).pipe(fs.createWriteStream(ImagePath + param.savename)).on('close', function(){
+      resolve(returnParam);
+    });
+  });
+})
 
 exports.insertMemberImage = (param) => new Promise((resolve, reject) => {
   var queryStr = 'INSERT INTO image_file ('
@@ -29,6 +42,7 @@ exports.insertMemberImage = (param) => new Promise((resolve, reject) => {
   queryStr += 'insert_date) ';
   queryStr += 'VALUES (?, ?, ?, ?, ?, now())';
   var queryVar = [param.savename, param.originalname, param.mimetype, param.size, 1];
+  console.log(queryStr);
   console.log(queryVar);
   pool.query(queryStr, queryVar, function(error, rows, fields) {
     if (error) {
@@ -53,6 +67,7 @@ exports.insertMemberInfo = (param) => new Promise((resolve, reject) => {
   queryStr += 'insert_date) ';
   queryStr += 'VALUES (?, ?, ?, ?, ?, now())';
   var queryVar = [param.idxImage, param.name, param.phone, param.email, 1];
+  console.log(queryStr);
   console.log(queryVar);
   pool.query(queryStr, queryVar, function(error, rows, fields) {
     if (error) {
@@ -76,6 +91,7 @@ exports.insertLoginInfo = (param) => new Promise((resolve, reject) => {
   queryStr += 'insert_date) ';
   queryStr += 'VALUES (?, ?, ?, ?, now())';
   var queryVar = [param.idxMember, param.loginType, param.loginUid, 1];
+  console.log(queryStr);
   console.log(queryVar);
   pool.query(queryStr, queryVar, function(error, rows, fields) {
     if (error) {
@@ -91,13 +107,16 @@ exports.insertLoginInfo = (param) => new Promise((resolve, reject) => {
 })
 
 exports.retrieveSocialLogin = (param) => new Promise((resolve, reject) => {
-  var queryStr = 'SELECT b.id, b.name, b.phone, b.email, b.idx_image as idxImage '
-  queryStr += 'FROM socialLogin a, member b ';
-  queryStr += 'WHERE a.idx_member = b.id ';
-  queryStr += 'AND b.status_flag != 3 ';
+  var queryStr = 'SELECT b.id, b.name, b.phone, b.email, c.save_file_name AS imageName '
+  queryStr += 'FROM socialLogin a join member b ';
+  queryStr += 'on a.idx_member = b.id ';
+  queryStr += 'left join image_file c ';
+  queryStr += 'on b.idx_image = c.id ';
+  queryStr += 'WHERE b.status_flag != 3 ';
   queryStr += 'AND a.type = ? ';
   queryStr += 'AND a.uid = ?';
   var queryVar = [param.type, param.uid];
+  console.log(queryStr);
   console.log(queryVar);
   pool.query(queryStr, queryVar, function(error, rows, fields) {
     if (error) {
@@ -135,11 +154,13 @@ exports.updateMemberInfo = (param) => new Promise((resolve, reject) => {
 })
 
 exports.retrieveMemberInfo = (param) => new Promise((resolve, reject) => {
-  var queryStr = 'SELECT id, name, phone, email, idx_image as idxImage '
-  queryStr += 'FROM member ';
-  queryStr += 'WHERE id = ? ';
-  queryStr += 'AND status_flag != 3 ';
+  var queryStr = 'SELECT a.id, a.name, a.phone, a.email, c.save_file_name AS imageName '
+  queryStr += 'FROM member a left join image_file c ';
+  queryStr += 'on a.idx_image = c.id ';
+  queryStr += 'WHERE a.id = ? ';
+  queryStr += 'AND a.status_flag != 3 ';
   var queryVar = [param];
+  console.log(queryStr);
   console.log(queryVar);
   pool.query(queryStr, queryVar, function(error, rows, fields) {
     if (error) {

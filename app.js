@@ -1,7 +1,8 @@
 'use strict';
 
 var SwaggerExpress = require('swagger-express-mw');
-var app = require('express')();
+var express = require('express');
+var app = express();
 var bodyParser = require('body-parser');
 module.exports = app; // for testing
 
@@ -14,6 +15,8 @@ SwaggerExpress.create(config, function(err, swaggerExpress) {
   if (err) { throw err; }
   // install middleware
   swaggerExpress.register(app);
+
+  app.use('/sororok/images', express.static('/uploads/'));
 
   app.use(SwaggerUi(swaggerExpress.runner.swagger));
 

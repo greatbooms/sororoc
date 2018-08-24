@@ -386,3 +386,26 @@ exports.updateAuthority2 = (param) => new Promise((resolve, reject) => {
     }
   })
 })
+
+exports.updateRepositoryInfo = (param) => new Promise((resolve, reject) => {
+  var queryStr = 'update repository set ';
+  queryStr += 'code = ?, ';
+  queryStr += 'status_flag = 2, ';
+  queryStr += 'update_date = now() ';
+  queryStr += 'WHERE id = ? ';
+  queryStr += 'AND status_flag != 3';
+  var queryVar = [param.code, param.idxRepository];
+  console.log(queryStr);
+  console.log(queryVar);
+  pool.query(queryStr, queryVar, function(error, rows, fields) {
+    if (error) {
+      reject(error)
+    } else {
+      if (rows != undefined && rows.length != 0) {
+        resolve(rows);
+      } else {
+        reject(new Error('updateAuthority1'));
+      }
+    }
+  })
+})

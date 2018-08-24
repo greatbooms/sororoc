@@ -36,7 +36,8 @@ module.exports = {
   exitRepository: exitRepository,
   destroyRepository: destroyRepository,
   retrieveRepositoryMember: retrieveRepositoryMember,
-  changeAuthority: changeAuthority
+  changeAuthority: changeAuthority,
+  update: update
 };
 
 /*
@@ -362,36 +363,44 @@ async function changeAuthority(req, res) {
   }
 }
 
-// async function update(req, res) {
-//   let returnParam = {};
-//   try {
-//     let updateParam = {};
+async function update(req, res) {
+  let returnParam = {};
+  try {
+    let updateParam = {};
 
-//     updateParam.code = req.swagger.params.data.value.code;
-//     updateParam.idxRepository = req.swagger.params.data.value.repositoryId;
+    updateParam.idxRepository = req.swagger.params.data.value.repositoryId;
 
-//     let exitFlag = true;
-//     let code = '';
-//     do {
-//       code = Math.floor((1 + Math.random()) * 0x100000).toString(16).toUpperCase();
+    let exitFlag = true;
+    let code = '';
+    do {
+      code = Math.floor((1 + Math.random()) * 0x100000).toString(16).toUpperCase();
 
-//       let resultCode = await repositoryIO.retrieveRepositoryCode(code);
+      let resultCode = await repositoryIO.retrieveRepositoryCode(code);
 
-//       if (resultCode.length != 0) {
-//         continue;
-//       } else {
-//         exitFlag = false;
-//       }
+      if (resultCode.length != 0) {
+        continue;
+      } else {
+        exitFlag = false;
+      }
 
-//       returnParam.code = code;
+      updateParam.code = code;
+      let resultUpdate = await repositoryIO.updateRepositoryInfo(updateParam);
 
-//       reponseReturn.success(res, returnParam);
-//     } while (exitFlag)
+      if (resultUpdate.changedRows == 0) {
+        returnParam.code = -1;
+        returnParam.groupCode = '';
+        returnParam.message = '그룹정보 변경에 실패하였습니다.'
+      } else {
+        returnParam.code = 0;
+        returnParam.groupCode = code;
+        returnParam.message = '';
+      }
 
-//     reponseReturn.success(res, returnParam);
-//   } catch (err) {
-//     console.log(err);
-//     returnParam.message = err.message;
-//     reponseReturn.error(res, returnParam, '500');
-//   }
-// }
+      reponseReturn.success(res, returnParam);
+    } while (exitFlag)
+  } catch (err) {
+    console.log(err);
+    returnParam.message = err.message;
+    reponseReturn.error(res, returnParam, '500');
+  }
+}

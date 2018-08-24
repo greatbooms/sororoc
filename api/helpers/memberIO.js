@@ -22,11 +22,11 @@ exports.saveImage = (file) => {
 
 exports.saveUrlImage = (param) => new Promise((resolve, reject) => {
   let returnParam = {};
-  request.head(param.url, function(err, res, body){
+  request.head(param.url, function(err, res, body) {
     returnParam.type = res.headers['content-type'];
     returnParam.size = res.headers['content-length'];
 
-    request(param.url).pipe(fs.createWriteStream(ImagePath + param.savename)).on('close', function(){
+    request(param.url).pipe(fs.createWriteStream(ImagePath + param.savename)).on('close', function() {
       resolve(returnParam);
     });
   });
@@ -168,6 +168,94 @@ exports.retrieveMemberInfo = (param) => new Promise((resolve, reject) => {
       reject(error)
     } else {
       resolve(rows);
+    }
+  })
+})
+
+exports.removeRepositoryMemberInfo = (param) => new Promise((resolve, reject) => {
+  var queryStr = 'update memberJoinRepository set ';
+  queryStr += 'status_flag = 3, ';
+  queryStr += 'update_date = now() ';
+  queryStr += 'WHERE idx_member = ? ';
+  queryStr += 'AND status_flag != 3';
+  var queryVar = [param.memberId];
+  console.log(queryStr);
+  console.log(queryVar);
+  pool.query(queryStr, queryVar, function(error, rows, fields) {
+    if (error) {
+      reject(error)
+    } else {
+      if (rows != undefined && rows.length != 0) {
+        resolve(rows);
+      } else {
+        reject(new Error('updateAuthority1'));
+      }
+    }
+  })
+})
+
+exports.removeMemberRepositoryInfo = (param) => new Promise((resolve, reject) => {
+  var queryStr = 'update memberJoinRepository set ';
+  queryStr += 'status_flag = 3, ';
+  queryStr += 'update_date = now() ';
+  queryStr += 'WHERE idx_member = ? ';
+  queryStr += 'AND status_flag != 3';
+  var queryVar = [param.memberId];
+  console.log(queryStr);
+  console.log(queryVar);
+  pool.query(queryStr, queryVar, function(error, rows, fields) {
+    if (error) {
+      reject(error)
+    } else {
+      if (rows != undefined && rows.length != 0) {
+        resolve(rows);
+      } else {
+        reject(new Error('updateAuthority1'));
+      }
+    }
+  })
+})
+
+exports.removeMemberLoginInfo = (param) => new Promise((resolve, reject) => {
+  var queryStr = 'update socialLogin set ';
+  queryStr += 'status_flag = 3, ';
+  queryStr += 'update_date = now() ';
+  queryStr += 'WHERE idx_member = ? ';
+  queryStr += 'AND status_flag != 3';
+  var queryVar = [param.memberId];
+  console.log(queryStr);
+  console.log(queryVar);
+  pool.query(queryStr, queryVar, function(error, rows, fields) {
+    if (error) {
+      reject(error)
+    } else {
+      if (rows != undefined && rows.length != 0) {
+        resolve(rows);
+      } else {
+        reject(new Error('updateAuthority1'));
+      }
+    }
+  })
+})
+
+exports.removeMemberInfo = (param) => new Promise((resolve, reject) => {
+  var queryStr = 'update member set ';
+  queryStr += 'status_flag = 3, ';
+  queryStr += 'update_date = now() ';
+  queryStr += 'WHERE id = ? ';
+  queryStr += 'AND status_flag != 3';
+  var queryVar = [param.memberId];
+  console.log(queryStr);
+  console.log(queryVar);
+  pool.query(queryStr, queryVar, function(error, rows, fields) {
+    if (error) {
+      reject(error)
+    } else {
+      if (rows != undefined && rows.length != 0) {
+        resolve(rows);
+      } else {
+        reject(new Error('updateAuthority1'));
+      }
     }
   })
 })

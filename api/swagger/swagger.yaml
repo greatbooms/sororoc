@@ -5,7 +5,7 @@ definitions:
     properties:
       message: {type: string}
     required: [message]
-host: 127.0.0.1:40005
+host: 45.63.120.140:40005
 info: {title: Sororok, version: 0.0.1}
 paths:
   /member/join:
@@ -78,6 +78,34 @@ paths:
               phone: {description: "\uD68C\uC6D0\uAC00\uC785\uB418\uC788\uC9C0 \uC54A\
                   \uC744\uB54C\uB294 ''", type: string}
             required: [memberId]
+        default:
+          description: Error
+          schema: {$ref: '#/definitions/ErrorResponse'}
+    x-swagger-router-controller: member
+  /member/remove:
+    put:
+      consumes: [application/json]
+      description: "\uC18C\uB85C\uB85D \uD68C\uC6D0 \uD0C8\uD1F4"
+      operationId: remove
+      parameters:
+      - description: "\uC18C\uB85C\uB85D \uD68C\uC6D0 \uD0C8\uD1F4 \uD30C\uB77C\uBBF8\
+          \uD130"
+        in: body
+        name: data
+        schema:
+          properties:
+            memberId: {type: integer}
+          required: [memberId]
+          type: object
+      responses:
+        '200':
+          description: Success
+          schema:
+            properties:
+              code: {description: "\uC131\uACF5\uC2DC 0 \uC2E4\uD328\uC2DC \uC74C\uC218",
+                type: integer}
+              message: {type: string}
+            required: [code]
         default:
           description: Error
           schema: {$ref: '#/definitions/ErrorResponse'}
@@ -372,34 +400,34 @@ paths:
           description: Error
           schema: {$ref: '#/definitions/ErrorResponse'}
     x-swagger-router-controller: repository
-  # /repository/update:
-  #   put:
-  #     consumes: [application/json]
-  #     description: "\uADF8\uB8F9\uC815\uBCF4 \uBCC0\uACBD"
-  #     operationId: update
-  #     parameters:
-  #     - description: "\uD604\uC7AC\uB294 \uCF54\uB4DC\uB9CC \uBCC0\uACBD \uAC00\uB2A5"
-  #       in: body
-  #       name: data
-  #       schema:
-  #         properties:
-  #           code: {type: string}
-  #           repositoryId: {type: integer}
-  #         required: [code, repositoryId]
-  #         type: object
-  #     responses:
-  #       '200':
-  #         description: Success
-  #         schema:
-  #           properties:
-  #             code: {description: "\uC131\uACF5\uC2DC 0 \uC2E4\uD328\uC2DC \uC74C\uC218",
-  #               type: integer}
-  #             message: {type: string}
-  #           required: [code]
-  #       default:
-  #         description: Error
-  #         schema: {$ref: '#/definitions/ErrorResponse'}
-  #   x-swagger-router-controller: repository
+  /repository/update:
+    put:
+      consumes: [application/json]
+      description: "\uADF8\uB8F9\uC815\uBCF4 \uBCC0\uACBD"
+      operationId: update
+      parameters:
+      - description: "\uD604\uC7AC\uB294 \uCF54\uB4DC\uB9CC \uBCC0\uACBD \uAC00\uB2A5"
+        in: body
+        name: data
+        schema:
+          properties:
+            repositoryId: {type: integer}
+          required: [repositoryId]
+          type: object
+      responses:
+        '200':
+          description: Success
+          schema:
+            properties:
+              code: {description: "\uC131\uACF5\uC2DC 0 \uC2E4\uD328\uC2DC \uC74C\uC218",
+                type: integer}
+              groupCode: {type: string}
+              message: {type: string}
+            required: [code]
+        default:
+          description: Error
+          schema: {$ref: '#/definitions/ErrorResponse'}
+    x-swagger-router-controller: repository
   /swagger: {x-swagger-pipe: swagger_raw}
 produces: [application/json]
 schemes: [http]

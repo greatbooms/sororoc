@@ -30,7 +30,8 @@ var url = require('url');
 module.exports = {
   login: login,
   join: join,
-  update: update
+  update: update,
+  remove: remove
 };
 
 /*
@@ -95,12 +96,12 @@ async function join(req, res) {
     } else if (req.swagger.params.imageUrl.value != undefined) {
       let inputUrl = req.swagger.params.imageUrl.value;
       let parsedObject = url.parse(inputUrl);
-      saveFileName = memberIo.createNonceStr() + '_' + parsedObject.pathname.split('/')[parsedObject.pathname.split('/').length-1];
+      saveFileName = memberIo.createNonceStr() + '_' + parsedObject.pathname.split('/')[parsedObject.pathname.split('/').length - 1];
       let saveImgParam = {};
       saveImgParam.url = inputUrl;
       saveImgParam.savename = saveFileName;
       let resultSaveImage = await memberIo.saveUrlImage(saveImgParam);
-      saveImgParam.originalname = parsedObject.pathname.split('/')[parsedObject.pathname.split('/').length-1]
+      saveImgParam.originalname = parsedObject.pathname.split('/')[parsedObject.pathname.split('/').length - 1]
       saveImgParam.mimetype = resultSaveImage.type;
       saveImgParam.size = resultSaveImage.size;
       let resultImage = await memberIo.insertMemberImage(saveImgParam);
@@ -162,6 +163,31 @@ async function update(req, res) {
     returnParam = await memberIo.retrieveMemberInfo(req.swagger.params.memberId.value);
 
     reponseReturn.success(res, returnParam[0]);
+  } catch (err) {
+    console.log(err);
+    returnParam.message = err.message;
+    reponseReturn.error(res, returnParam, '500');
+  }
+}
+
+async function remove(req, res) {
+  let returnParam = {};
+  try {
+    let updateParam = {};
+    updateParam.memberId = req.swagger.params.data.value.memberId;
+    let result1 = await memberIo.removeMemberRepositoryInfo(updateParam);
+    let result2 = await memberIo.removeMemberLoginInfo(updateParam);
+    let result3 = await memberIo.removeMemberInfo(updateParam);
+
+    if (result3.changedRows == 0) {
+      returnParam.code = -1;
+      returnParam.message = '탈퇴에 실패하였습니다.'
+    } else {
+      returnParam.code = 0;
+      returnParam.message = '';
+    }
+
+    reponseReturn.success(res, returnParam);
   } catch (err) {
     console.log(err);
     returnParam.message = err.message;

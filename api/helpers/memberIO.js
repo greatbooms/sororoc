@@ -259,3 +259,67 @@ exports.removeMemberInfo = (param) => new Promise((resolve, reject) => {
     }
   })
 })
+
+exports.retrieveJoinRepository = (idxMember) => new Promise((resolve, reject) => {
+  var queryStr = 'SELECT idx_member, idx_repository '
+  queryStr += 'FROM memberJoinRepository ';
+  queryStr += 'WHERE idx_member = ? ';
+  queryStr += 'AND status_flag != 3 ';
+  var queryVar = [idxMember];
+  console.log(queryStr);
+  console.log(queryVar);
+  pool.query(queryStr, queryVar, function(error, rows, fields) {
+    if (error) {
+      reject(error)
+    } else {
+      resolve(rows);
+    }
+  })
+})
+
+exports.insertMemberUpdateHistory = (param) => new Promise((resolve, reject) => {
+  var queryStr = 'INSERT INTO allHistory ('
+  queryStr += 'idx_member, ';
+  queryStr += 'idx_repository, ';
+  queryStr += 'content, ';
+  queryStr += 'insert_date) ';
+  queryStr += 'VALUES (';
+  queryStr += param.idxMember + ', ';
+  queryStr += param.idxRepository + ', ';
+  queryStr += 'concat("\'", REPOSITORY_CODENAME('+param.idxRepository+'), "\' 그룹의 \'",  MEMBER_CODENAME('+param.idxMember+'), "\'님이 정보가 변경되었습니다!\n새롭게 업데이트 해주세요."), ';
+  queryStr += 'now())';
+  console.log(queryStr);
+  pool.query(queryStr, function(error, rows, fields) {
+    if (error) {
+      reject(error)
+    } else {
+      if (rows != undefined && rows.length != 0) {
+        resolve(rows);
+      } else {
+        reject(new Error('insertRepositoryJoinHistory'));
+      }
+    }
+  })
+})
+
+exports.retrieveMemberHistory = (param) => new Promise((resolve, reject) => {
+  var queryStr = "SELECT seq_no, content, date ";
+  queryStr += "FROM (SELECT seq_no, content, DATE_FORMAT(insert_date, '%Y-%m-%d') as date ";
+  queryStr += 'FROM allHistory ';
+  queryStr += 'WHERE idx_repository IN (select idx_repository from memberJoinRepository where idx_member = ?) ';
+  queryStr += 'AND idx_member != ? ';
+  queryStr += 'AND insert_date BETWEEN date_add(now(), interval -1 month) AND now() ';
+  queryStr += 'UNION select 0, "어서오세요:)\n소로록에 오신것을 환영합니다.", '
+  queryStr += "DATE_FORMAT((select insert_date from member where id = ? ), '%Y-%m-%d') as date from dual ) x "
+  queryStr += 'order by x.date desc limit 10'
+  var queryVar = [param.idxMember, param.idxMember, param.idxMember];
+  console.log(queryStr);
+  console.log(queryVar);
+  pool.query(queryStr, queryVar, function(error, rows, fields) {
+    if (error) {
+      reject(error)
+    } else {
+      resolve(rows);
+    }
+  })
+})

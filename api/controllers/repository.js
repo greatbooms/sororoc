@@ -37,7 +37,8 @@ module.exports = {
   destroyRepository: destroyRepository,
   retrieveRepositoryMember: retrieveRepositoryMember,
   changeAuthority: changeAuthority,
-  update: update
+  update: update,
+  retrieveInfo: retrieveInfo
 };
 
 /*
@@ -105,6 +106,7 @@ async function createRepository(req, res) {
     let joinRepositoryParam = {};
     joinRepositoryParam.idxRepository = resultRepository.insertId;
     joinRepositoryParam.idxMember = req.swagger.params.memberId.value;
+    joinRepositoryParam.authority = 1;
 
     console.log(joinRepositoryParam)
 
@@ -114,6 +116,11 @@ async function createRepository(req, res) {
     returnParam.memberId = req.swagger.params.memberId.value;
     returnParam.name = req.swagger.params.name.value;
     returnParam.code = req.swagger.params.code.value;
+
+    let historyParam = {}
+    historyParam.idxMember = req.swagger.params.memberId.value;
+    historyParam.idxRepository = resultRepository.insertId;
+    repositoryIO.insertRepositoryJoinHistory(historyParam);
 
     reponseReturn.success(res, returnParam);
   } catch (err) {
@@ -189,6 +196,7 @@ async function joinRepository(req, res) {
     insertParam.idxMember = req.swagger.params.data.value.memberId;
     insertParam.idxRepository = req.swagger.params.data.value.repositoryId;
     insertParam.code = req.swagger.params.data.value.code;
+    insertParam.authority = 0;
 
     let resultRetrieve = await repositoryIO.retrieveRepositoryCodeCheck(insertParam);
 
@@ -200,6 +208,8 @@ async function joinRepository(req, res) {
       if (joinCheck.length == 0) {
         let resultInsert = await repositoryIO.insertRepositoryJoin(insertParam);
         returnParam.repositoryId = req.swagger.params.data.value.repositoryId;
+
+        repositoryIO.insertRepositoryJoinHistory(insertParam);
       } else {
         returnParam.repositoryId = -2;
         returnParam.message = '이미 가입된 저장소 입니다.';
@@ -398,6 +408,35 @@ async function update(req, res) {
 
       reponseReturn.success(res, returnParam);
     } while (exitFlag)
+  } catch (err) {
+    console.log(err);
+    returnParam.message = err.message;
+    reponseReturn.error(res, returnParam, '500');
+  }
+}
+
+async function retrieveInfo(req, res) {
+  let returnParam = {};
+  try {
+    let repositoryId = req.swagger.params.repositoryId.value;
+    console.log(req.swagger.params)
+
+    let resultRepositoryInfo = await repositoryIO.retrieveRepositoryInfo(repositoryId);
+
+    console.log(resultRepositoryInfo);
+
+    if (resultRepositoryInfo != undefined && resultRepositoryInfo.length != 0) {
+      returnParam = resultRepositoryInfo[0];
+    } else {
+      returnParam.repositoryId = -1;
+      returnParam.name = '';
+      returnParam.extra_info = '';
+      returnParam.code = '';
+      returnParam.imageName = '';
+    }
+
+    reponseReturn.success(res, returnParam);
+
   } catch (err) {
     console.log(err);
     returnParam.message = err.message;

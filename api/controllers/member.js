@@ -31,7 +31,9 @@ module.exports = {
   login: login,
   join: join,
   update: update,
-  remove: remove
+  remove: remove,
+  history: history,
+  info: info
 };
 
 /*
@@ -160,6 +162,15 @@ async function update(req, res) {
 
     let resultMember = await memberIo.updateMemberInfo(updateParam);
 
+    let resultRepository = await memberIo.retrieveJoinRepository(req.swagger.params.memberId.value);
+
+    resultRepository.forEach(joinInfo => {
+      let historyParam = {}
+      historyParam.idxMember = joinInfo.idx_member;
+      historyParam.idxRepository = joinInfo.idx_repository;
+      memberIo.insertMemberUpdateHistory(historyParam);
+    });
+
     returnParam = await memberIo.retrieveMemberInfo(req.swagger.params.memberId.value);
 
     reponseReturn.success(res, returnParam[0]);
@@ -185,6 +196,54 @@ async function remove(req, res) {
     } else {
       returnParam.code = 0;
       returnParam.message = '';
+    }
+
+    reponseReturn.success(res, returnParam);
+  } catch (err) {
+    console.log(err);
+    returnParam.message = err.message;
+    reponseReturn.error(res, returnParam, '500');
+  }
+}
+
+async function history(req, res) {
+  console.log('*********************');
+  console.log(req.swagger.params);
+  let selectParam = {};
+  let returnParam = {};
+
+  try {
+    selectParam.idxMember = req.swagger.params.memberId.value;
+    console.log(selectParam);
+    let resultHistoryInfo = await memberIo.retrieveMemberHistory(selectParam);
+
+    console.log(resultHistoryInfo.length);
+
+    reponseReturn.success(res, resultHistoryInfo);
+  } catch (err) {
+    console.log(err);
+    returnParam.message = err.message;
+    reponseReturn.error(res, returnParam, '500');
+  }
+}
+
+async function info(req, res) {
+  console.log('*********************');
+  console.log(req.swagger.params);
+  let selectParam = {};
+  let returnParam = {};
+
+  try {
+    let resultMemberInfo = await memberIo.retrieveMemberInfo(req.swagger.params.memberId.value);
+
+    if (resultMemberInfo != undefined && resultMemberInfo.length != 0) {
+      returnParam = resultMemberInfo[0];
+    } else {
+      returnParam.memberId = -1;
+      returnParam.name = '';
+      returnParam.phone = '';
+      returnParam.email = '';
+      returnParam.imageName = '';
     }
 
     reponseReturn.success(res, returnParam);

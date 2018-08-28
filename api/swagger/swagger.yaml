@@ -8,6 +8,48 @@ definitions:
 host: 45.63.120.140:40005
 info: {title: Sororok, version: 0.0.1}
 paths:
+  /member/info:
+    get:
+      description: "회원정보 불러오기"
+      operationId: info
+      parameters:
+      - {in: query, name: memberId, required: true, type: integer}
+      produces: [application/json, application/xml]
+      responses:
+        '200':
+          description: Success
+          schema:
+            properties:
+              memberId: {type: integer}
+              name: {type: string}
+              phone: {type: string}
+              email: {type: string}
+              imageName: {type: string}
+            required: [memberId]
+        default:
+          description: Error
+          schema: {$ref: '#/definitions/ErrorResponse'}
+    x-swagger-router-controller: member
+  /member/history:
+    get:
+      description: "\uCD5C\uADFC \uC18C\uC2DD \uAC00\uC838\uC624\uAE30"
+      operationId: history
+      parameters:
+      - {in: query, name: memberId, required: true, type: integer}
+      produces: [application/json, application/xml]
+      responses:
+        '200':
+          description: Success
+          schema:
+            properties:
+              content: {description: "\uD45C\uC2DC\uD560 \uB0B4\uC6A9", type: string}
+              date: {description: "\uC18C\uC2DD \uC2DC\uAC04", type: string}
+              seq_no: {description: "\uC18C\uC2DD \uC778\uB371\uC2A4", type: integer}
+            required: [seq_no]
+        default:
+          description: Error
+          schema: {$ref: '#/definitions/ErrorResponse'}
+    x-swagger-router-controller: member
   /member/join:
     put:
       consumes: [multipart/form-data]
@@ -201,7 +243,7 @@ paths:
       - {description: "\uC800\uC7A5\uC18C\uC0DD\uC131\uD55C\uC0AC\uB78C", in: formData,
         name: memberId, required: true, type: integer}
       - {description: "\uC800\uC7A5\uC18C\uC124\uBA85", in: formData, name: extraInfo,
-        required: false, type: string}
+        required: true, type: string}
       - {description: "\uC800\uC7A5\uC18C \uC774\uBBF8\uC9C0", in: formData, name: repositoryImage,
         required: false, type: file}
       responses:
@@ -347,6 +389,10 @@ paths:
               name: {description: "\uC800\uC7A5\uC18C \uC774\uB984", type: string}
               repositoryId: {description: "\uC800\uC7A5\uC18C \uC778\uB371\uC2A4",
                 type: integer}
+              authority: {description: "그룹 권한",
+                type: integer}
+              joinFlag: {description: "그룹 가입 여부",
+                type: integer}
             required: [repositoryId]
         default:
           description: Error
@@ -391,10 +437,11 @@ paths:
           schema:
             properties:
               extra_info: {description: "\uC800\uC7A5\uC18C \uC124\uBA85", type: string}
-              imageName: {description: "\uC800\uC7A5\uC18C \uC774\uBBF8\uC9C0", type: integer}
+              imageName: {description: "\uC800\uC7A5\uC18C \uC774\uBBF8\uC9C0", type: string}
               name: {description: "\uC800\uC7A5\uC18C \uC774\uB984", type: string}
               repositoryId: {description: "\uC800\uC7A5\uC18C \uC778\uB371\uC2A4",
                 type: integer}
+              joinFlag: {type: integer}
             required: [repositoryId]
         default:
           description: Error
@@ -424,6 +471,28 @@ paths:
               groupCode: {type: string}
               message: {type: string}
             required: [code]
+        default:
+          description: Error
+          schema: {$ref: '#/definitions/ErrorResponse'}
+    x-swagger-router-controller: repository
+  /repository/info:
+    get:
+      description: "그룹정보 가져오기"
+      operationId: retrieveInfo
+      parameters:
+      - {in: query, name: repositoryId, required: true, type: integer}
+      produces: [application/json, application/xml]
+      responses:
+        '200':
+          description: Success
+          schema:
+            properties:
+              repositoryId: {type: integer}
+              name: {type: string}
+              extra_info: {type: string}
+              code: {type: string}
+              imageName: {type: string}
+            required: [repositoryId]
         default:
           description: Error
           schema: {$ref: '#/definitions/ErrorResponse'}

@@ -1,7 +1,7 @@
 var fs = require('fs');
 var pool = require('../../config/databaseConfig');
 
-var ImagePath = './uploads/';
+var ImagePath = '/uploads/';
 
 var createNonceStr = exports.createNonceStr = function() {
   return Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1) + Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1) + Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1) + Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1) + Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1) + Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1) + Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1) + Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1);
@@ -10,7 +10,7 @@ var createNonceStr = exports.createNonceStr = function() {
 exports.saveImage = (file) => {
   fs.writeFile(ImagePath + file.savename, file.buffer, function(err) {
     if (err) {
-      debug(err);
+      console.log(err);
       var err = {
         message: 'File not uploaded'
       };
@@ -78,7 +78,7 @@ exports.insertRepositoryJoin = (param) => new Promise((resolve, reject) => {
   queryStr += 'status_flag, ';
   queryStr += 'insert_date) ';
   queryStr += 'VALUES (?, ?, ?, ?, now())';
-  var queryVar = [param.idxMember, param.idxRepository, 1, 1];
+  var queryVar = [param.idxMember, param.idxRepository, param.authority, 1];
   console.log(queryStr);
   console.log(queryVar);
   pool.query(queryStr, queryVar, function(error, rows, fields) {
@@ -112,7 +112,7 @@ exports.retrieveRepositoryCode = (code) => new Promise((resolve, reject) => {
 })
 
 exports.retrieveRepositoryList = (code) => new Promise((resolve, reject) => {
-  var queryStr = 'SELECT b.id as repositoryId, b.name, b. extra_info, c.save_file_name AS imageName, a.authority '
+  var queryStr = 'SELECT b.id as repositoryId, b.name, b. extra_info, c.save_file_name AS imageName, a.authority, 1 as joinFlag '
   queryStr += 'FROM memberJoinRepository a join repository b ';
   queryStr += 'on a.idx_repository = b.id ';
   queryStr += 'left join image_file c ';
@@ -209,30 +209,6 @@ exports.retrieveRepositoryJoinCheck = (param) => new Promise((resolve, reject) =
   })
 })
 
-exports.insertRepositoryJoin = (param) => new Promise((resolve, reject) => {
-  var queryStr = 'INSERT INTO memberJoinRepository ('
-  queryStr += 'idx_member, ';
-  queryStr += 'idx_repository, ';
-  queryStr += 'authority, ';
-  queryStr += 'status_flag, ';
-  queryStr += 'insert_date) ';
-  queryStr += 'VALUES (?, ?, ?, ?, now())';
-  var queryVar = [param.idxMember, param.idxRepository, 0, 1];
-  console.log(queryStr);
-  console.log(queryVar);
-  pool.query(queryStr, queryVar, function(error, rows, fields) {
-    if (error) {
-      reject(error)
-    } else {
-      if (rows != undefined && rows.length != 0) {
-        resolve(rows);
-      } else {
-        reject(new Error('insertRepositoryJoin Error'));
-      }
-    }
-  })
-})
-
 exports.exitRepository = (param) => new Promise((resolve, reject) => {
   var queryStr = 'update memberJoinRepository set ';
   queryStr += 'status_flag = 3, ';
@@ -301,7 +277,7 @@ exports.removeRepository = (param) => new Promise((resolve, reject) => {
   var queryStr = 'update repository set ';
   queryStr += 'status_flag = 3, ';
   queryStr += 'update_date = now() ';
-  queryStr += 'WHERE idx_repository = ? ';
+  queryStr += 'WHERE id = ? ';
   queryStr += 'AND status_flag != 3';
   var queryVar = [param.idxRepository];
   console.log(queryStr);
@@ -406,6 +382,49 @@ exports.updateRepositoryInfo = (param) => new Promise((resolve, reject) => {
       } else {
         reject(new Error('updateAuthority1'));
       }
+    }
+  })
+})
+
+exports.insertRepositoryJoinHistory = (param) => new Promise((resolve, reject) => {
+  var queryStr = 'INSERT INTO allHistory ('
+  queryStr += 'idx_member, ';
+  queryStr += 'idx_repository, ';
+  queryStr += 'content, ';
+  queryStr += 'insert_date) ';
+  queryStr += 'VALUES (';
+  queryStr += param.idxMember + ', ';
+  queryStr += param.idxRepository + ', ';
+  queryStr += 'concat("\'", REPOSITORY_CODENAME('+param.idxRepository+'), "\' 그룹에 \'",  MEMBER_CODENAME('+param.idxMember+'), "\'님이 새롭게 추가되었습니다."), ';
+  queryStr += 'now())';
+  console.log(queryStr);
+  pool.query(queryStr, function(error, rows, fields) {
+    if (error) {
+      reject(error)
+    } else {
+      if (rows != undefined && rows.length != 0) {
+        resolve(rows);
+      } else {
+        reject(new Error('insertRepositoryJoinHistory'));
+      }
+    }
+  })
+})
+
+exports.retrieveRepositoryInfo = (idxRepository) => new Promise((resolve, reject) => {
+  var queryStr = 'SELECT a.id as repositoryId, a.name, a.extra_info, a.code, b.save_file_name AS imageName '
+  queryStr += 'FROM repository a left join image_file b ';
+  queryStr += 'on a.idx_image = b.id ';
+  queryStr += 'WHERE a.status_flag != 3 ';
+  queryStr += 'AND a.id = ? ';
+  var queryVar = [idxRepository];
+  console.log(queryStr);
+  console.log(queryVar);
+  pool.query(queryStr, queryVar, function(error, rows, fields) {
+    if (error) {
+      reject(error)
+    } else {
+      resolve(rows);
     }
   })
 })
